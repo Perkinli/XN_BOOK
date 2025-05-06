@@ -1,0 +1,194 @@
+@startuml
+skinparam monochrome false
+skinparam nodesep 40
+skinparam ranksep 60
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+
+' 全局样式设置
+skinparam package {
+    BackgroundColor<<Presentation>> #FFF5E6
+    BackgroundColor<<Business>> #E6F7FF
+    BackgroundColor<<Data>> #F0FFF0
+    BorderColor #333333
+    FontStyle bold
+    FontSize 16
+}
+
+skinparam database {
+    BackgroundColor #FFE6E6
+    BorderColor #CC0000
+    FontStyle bold
+    FontSize 14
+}
+
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #666666
+    FontSize 13
+}
+
+skinparam frame {
+    BackgroundColor #F5F5F5
+    BorderColor #999999
+}
+
+' 表示层定义
+package "表示层" <<Presentation>>{
+  package "学生端" {
+    [<color:#0066CC>登录</color>] as LoginUI
+    [<color:#0066CC>活动浏览与搜索</color>] as BrowseUI
+    [<color:#0066CC>活动详情与评论</color>] as DetailUI
+    [<color:#0066CC>活动预约</color>] as ReserveUI
+    [<color:#0066CC>消息通知与日历</color>] as NotifyUI
+    [<color:#0066CC>个人信息管理</color>] as ProfileUI
+  }
+  
+  package "管理员端" {
+    [<color:#CC3300>活动发布</color>] as PublishUI
+    [<color:#CC3300>活动管理</color>] as ActivityMgrUI
+    [<color:#CC3300>预约名单管理</color>] as ReserveMgrUI
+    [<color:#CC3300>消息管理</color>] as MessageMgrUI
+    [<color:#CC3300>活动报告生成</color>] as ReportUI
+  }
+}
+
+' 业务逻辑层定义
+package "业务逻辑层" <<Business>> {
+  component "<color:#009933>认证服务</color>" as AuthService
+  note right of AuthService
+    <b>功能：</b>
+    - 登录验证
+    - 权限控制
+    - 安全设置
+  end note
+
+  component "<color:#009933>活动服务</color>" as ActivityService
+  note right of ActivityService
+    <b>功能：</b>
+    - 活动创建/发布/修改/下架
+    - 活动检索与筛选
+    - 活动推荐算法
+    - 活动热度计算
+    - 时间冲突检测
+    - 活动状态管理
+  end note
+
+  component "<color:#009933>预约服务</color>" as ReserveService
+  note right of ReserveService
+    <b>功能：</b>
+    - 预约/取消预约
+    - 名额分配管理
+    - 用户资格校验
+    - 违约记录处理
+    - 候补队列管理
+  end note
+
+  component "<color:#009933>评论服务</color>" as CommentService
+  note right of CommentService
+    <b>功能：</b>
+    - 评论发布/删除
+    - 评论点赞
+    - 评论分页查询
+  end note
+
+  component "<color:#009933>通知服务</color>" as NotificationService
+  note right of NotificationService
+    <b>功能：</b>
+    - 活动提醒推送
+    - 个人日历管理
+    - 批量消息通知
+    - 违约提醒
+  end note
+
+  component "<color:#009933>报表服务</color>" as ReportService
+  note right of ReportService
+    <b>功能：</b>
+    - 活动报告生成
+    - 预约名单导出
+    - 参与率统计
+    - 违约率分析
+  end note
+}
+
+' 数据访问层定义
+package "数据访问层" <<Data>> {
+  component "<color:#9933CC>用户DAO</color>" as UserDAO
+  component "<color:#9933CC>活动DAO</color>" as ActivityDAO
+  component "<color:#9933CC>预约DAO</color>" as ReserveDAO
+  component "<color:#9933CC>评论DAO</color>" as CommentDAO
+  component "<color:#9933CC>消息DAO</color>" as MessageDAO
+  component "<color:#9933CC>违约记录DAO</color>" as ViolationDAO
+  
+  database "<color:#FF6600>Redis缓存</color>" as Cache {
+    frame "<color:#CC6600>活动热度</color>"
+    frame "<color:#CC6600>推荐数据</color>"
+    frame "<color:#CC6600>预约状态</color>"
+    frame "<color:#CC6600>会话管理</color>"
+  }
+}
+
+' 数据库层定义
+database "<color:#CC0000>MySQL数据库</color>" as DB {
+  frame "<color:#990000>用户表</color>"
+  frame "<color:#990000>活动表</color>"
+  frame "<color:#990000>预约表</color>"
+  frame "<color:#990000>评论表</color>"
+  frame "<color:#990000>消息表</color>"
+  frame "<color:#990000>违约记录表</color>"
+  frame "<color:#990000>系统配置表</color>"
+}
+
+' 连接线样式
+skinparam arrow {
+    Color #666666
+    FontColor #333333
+    FontSize 12
+    Style bold
+}
+
+' 表示层 -> 业务层连接
+LoginUI -[#0066CC]-> AuthService : "<color:#0066CC>POST /login</color>"
+BrowseUI -[#0066CC]-> ActivityService : "<color:#0066CC>GET /activities</color>"
+DetailUI -[#0066CC]-> ActivityService : "<color:#0066CC>GET /activity/{id}</color>"
+DetailUI -[#0066CC]-> CommentService : "<color:#0066CC>评论操作</color>"
+ReserveUI -[#0066CC]-> ReserveService : "<color:#0066CC>预约操作</color>"
+NotifyUI -[#0066CC]-> NotificationService : "<color:#0066CC>消息订阅</color>"
+ProfileUI -[#0066CC]-> AuthService : "<color:#0066CC>个人信息管理</color>"
+
+PublishUI -[#CC3300]-> ActivityService : "<color:#CC3300>发布活动</color>"
+ActivityMgrUI -[#CC3300]-> ActivityService : "<color:#CC3300>管理活动</color>"
+ReserveMgrUI -[#CC3300]-> ReserveService : "<color:#CC3300>管理预约</color>"
+MessageMgrUI -[#CC3300]-> NotificationService : "<color:#CC3300>发送通知</color>"
+ReportUI -[#CC3300]-> ReportService : "<color:#CC3300>生成报告</color>"
+
+' 业务层 -> 数据层连接
+AuthService -[#009933]-> UserDAO : "<color:#009933>用户CRUD</color>"
+ActivityService -[#009933]-> ActivityDAO : "<color:#009933>活动CRUD</color>"
+ReserveService -[#009933]-> ReserveDAO : "<color:#009933>预约CRUD</color>"
+CommentService -[#009933]-> CommentDAO : "<color:#009933>评论CRUD</color>"
+NotificationService -[#009933]-> MessageDAO : "<color:#009933>消息CRUD</color>"
+ReportService -[#009933]-> ActivityDAO : "<color:#009933>活动数据</color>"
+ReportService -[#009933]-> ReserveDAO : "<color:#009933>预约数据</color>"
+ReserveService -[#009933]-> ViolationDAO : "<color:#009933>违约记录</color>"
+
+ActivityService -[#FF6600]-> Cache : "<color:#FF6600>热度/推荐</color>"
+ReserveService -[#FF6600]-> Cache : "<color:#FF6600>预约状态</color>"
+AuthService -[#FF6600]-> Cache : "<color:#FF6600>会话管理</color>"
+
+' 数据层 -> 数据库连接
+UserDAO -[#9933CC]-> DB : "<color:#9933CC>JDBC</color>"
+ActivityDAO -[#9933CC]-> DB : "<color:#9933CC>JDBC</color>"
+ReserveDAO -[#9933CC]-> DB : "<color:#9933CC>JDBC</color>"
+CommentDAO -[#9933CC]-> DB : "<color:#9933CC>JDBC</color>"
+MessageDAO -[#9933CC]-> DB : "<color:#9933CC>JDBC</color>"
+ViolationDAO -[#9933CC]-> DB : "<color:#9933CC>JDBC</color>"
+
+legend right
+    <color:#0066CC>学生端交互</color> | 
+    <color:#CC3300>管理端交互</color> | 
+    <color:#009933>业务服务</color> | 
+    <color:#9933CC>数据访问</color> | 
+    <color:#FF6600>缓存操作</color>
+endlegend
+@enduml

@@ -1,0 +1,227 @@
+@startuml
+skinparam class {
+  BackgroundColor #F9F9F9
+  BorderColor #444
+  ArrowColor #666
+  AttributeFontSize 13
+  MethodFontSize 13
+  HeaderBackgroundColor #1E90FF
+  HeaderFontColor white
+  FontName "Microsoft YaHei"
+  Shadowing false
+  BorderThickness 1
+}
+
+skinparam package {
+  BackgroundColor #F0F0F0
+  BorderColor #888
+  FontSize 14
+  FontStyle bold
+}
+
+' 1. 基础模块（顶部） - 修改为横向排列
+package "基础模块" #E6FFE6 {
+  class 登录类 {
+    == 属性 ==
+    # 登录ID : int
+    # 学生ID : int
+    # IP地址 : varchar
+    == 方法 ==
+    + 用户认证(username,password) : boolean
+    + 密码重置(phone/email) : boolean
+    + 第三方登录(platform,token) : boolean
+    + 会话管理()
+  }
+
+  class 消息类 {
+    == 属性 ==
+    # 消息ID : int
+    # 学生ID : int
+    # 活动ID : int
+    # 标题 : varchar(255)
+    # 内容 : text
+    # 类型 : enum(system,activity,violation,appeal)
+    # 状态 : enum(unread,read)
+    == 方法 ==
+    + 发送系统通知(user_id,content)
+    + 推送活动提醒(activity_id)
+    + 发送违约提醒(violation_id)
+    + 标记已读(message_id)
+    + 日历日程展示(user_id,date_range)
+  }
+
+  class 违约记录类 {
+    == 属性 ==
+    # 违约ID : int
+    # 学生ID : int
+    # 活动ID : int
+    # 原因 : text
+    # 状态 : enum(pending,processed)
+    == 方法 ==
+    + 记录违约(user_id,activity_id)
+    + 处理申诉(appeal_id,decision)
+    + 更新用户信誉分(user_id)
+    + 生成违约报告(date_range)
+  }
+  
+  ' 横向排列关系
+  登录类 -[hidden]- 消息类
+  消息类 -[hidden]- 违约记录类
+}
+
+' 2. 核心业务层（中央）
+package "核心业务层" #E6F3FF {
+  together {
+    class 用户类 {
+      == 属性 ==
+      # 学生ID : int
+      # 用户名 : varchar(50)
+      # 密码 : varchar(255)
+      # 角色 : enum(student,admin)
+      # 姓名 : varchar(50)
+      # 性别 : enum(male,female,other)
+      # 出生日期 : date
+      # 年级 : varchar(20)
+      # 学院 : varchar(50)
+      # 班级 : varchar(50)
+      # 手机号 : varchar(20)
+      # 信誉分 : int
+      # 活动次数 : int
+      # 违约次数 : int
+      == 方法 ==
+      + 浏览活动列表(filter_params)
+      + 查看个人成就()
+      + 查看日程(date_range)
+      + 提交反馈(content)
+      + 修改个人信息(field,value)
+      + 查看活跃度统计()
+    }
+
+    class 活动类 {
+      == 属性 ==
+      # 活动ID : int
+      # 标题 : varchar(255)
+      # 描述 : text
+      # 海报路径 : varchar(255)
+      # 类型 : varchar(50)
+      # 承办单位 : varchar(100)
+      # 预约开始时间 : datetime
+      # 预约结束时间 : datetime
+      # 活动开始时间 : datetime
+      # 活动结束时间 : datetime
+      # 地点 : varchar(255)
+      # 最大参与人数 : int
+      # 是否强制 : boolean
+      # 状态 : enum(upcoming,ongoing,ended)
+      == 方法 ==
+      + 发布活动(activity_data)
+      + 修改活动(activity_id,update_data)
+      + 撤销活动(activity_id)
+      + 冲突检测(new_activity)
+      + 生成活动报告(activity_id)
+    }
+
+    class 预约类 {
+      == 属性 ==
+      # 预约ID : int
+      # 学生ID : int
+      # 活动ID : int
+      # 预约时间 : datetime
+      # 状态 : enum(pending,confirmed,cancelled)
+      # 附件路径 : varchar(255)
+      == 方法 ==
+      + 提交预约(user_id,activity_id)
+      + 取消预约(reservation_id)
+      + 上传附件(reservation_id,file)
+      + 校验资格(user_id,activity_id)
+      + 生成签到码(reservation_id)
+    }
+
+    class 签到类 {
+      == 属性 ==
+      # 签到ID : int
+      # 学生ID : int
+      # 活动ID : int
+      # 签到时间 : datetime
+      # 签退时间 : datetime
+      # 状态 : enum(checked_in,checked_out,absent)
+      == 方法 ==
+      + 签到(user_id,activity_id)
+      + 签退(checkin_id)
+      + 验证时间有效性(activity_id)
+      + 记录缺席(activity_id)
+    }
+  }
+
+  ' 核心业务关系
+  用户类 -- 活动类 : "浏览\n(1..n)"
+  活动类 *-- 预约类 : "包含\n(1..n)"
+  预约类 "1" --> "1" 签到类 : "生成"
+  用户类 *-- 签到类 : "执行"
+}
+
+' 3. 辅助模块
+package "辅助模块" #F0F0F0 {
+  class 成就类 {
+    == 属性 ==
+    # 成就ID : int
+    # 学生ID : int
+    # 称号 : varchar(100)
+    # 描述 : text
+    # 图标 : varchar(255)
+    # 解锁日期 : datetime
+    == 方法 ==
+    + 授予成就(user_id,type)
+    + 展示成就(user_id)
+    + 检查解锁条件(user_id)
+    + 生成分享图(achievement_id)
+  }
+
+  class 冲突检测类 {
+    == 方法 ==
+    + 检测活动冲突(new_activity)
+    + 验证用户冲突(user_id,activity_time)
+    + 解决冲突建议(conflicts)
+  }
+
+  class 数据分析类 {
+    == 方法 ==
+    + 生成活动报告(activity_id)
+    + 生成违约报告(date_range)
+    + 可视化数据(params)
+    + 导出Excel(data_type)
+  }
+}
+
+' 4. 管理模块（底部）
+package "管理模块" #FFE6E6 {
+  class 管理员类 {
+    == 方法 ==
+    + 发布活动(activity_data)
+    + 发布提醒(reminder_data)
+    + 导出预约名单(activity_id)
+    + 生成活动报告(activity_id)
+    + 修改活动(activity_id,updates)
+    + 处理违约申诉(appeal_id,decision)
+  }
+}
+
+' ===== 关系定义 =====
+' 基础模块关系
+用户类 -- 登录类 : "认证\n(1..1)"
+用户类 --> 消息类 : "接收\n(1..1)"
+预约类 --> 违约记录类 : "校验\n资格"
+
+' 辅助模块关系
+活动类 ..> 冲突检测类 : "检测\n冲突"
+成就类 ..> 数据分析类 : "使用\n统计"
+活动类 ..> 数据分析类 : "提供\n数据"
+
+' 管理关系
+管理员类 --> 活动类 : "管理\n(1..n)"
+管理员类 --> 数据分析类 : "获取\n报告"
+
+' ===== 布局控制 =====
+left to right direction
+hide empty members
+@enduml

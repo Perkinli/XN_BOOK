@@ -1,0 +1,171 @@
+@startuml Database_Schema
+skinparam linetype ortho
+skinparam monochrome false
+skinparam shadowing false
+skinparam roundCorner 20
+skinparam class {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor #444444
+}
+
+' 实体定义
+entity "tb_user" as user {
+  + userId [PK]
+  --
+  userName
+  password
+  userType
+  grade
+  userClass
+  phone
+  department
+  email
+  gender
+  releaseTime
+  violateCount
+  activityCount
+  avatar
+}
+
+entity "tb_activity" as activity {
+  + activityId [PK]
+  --
+  activityName
+  maxParticipants
+  currentParticipants
+  focus
+  hot
+  activityType
+  reserveStartTime
+  limitOfGrade
+  limitOfCollege
+  location
+  hasLimit
+  description
+  requirements
+  relationPeople
+  relationEmail
+  image
+  startTime
+  timeSpan
+  organizer
+}
+
+entity "tb_admin_activity" as admin_activity {
+  + id [PK]
+  --
+  + user_id [FK]
+  + activity_id [FK]
+}
+
+entity "tb_user_activity" as user_activity {
+  + reservationId [PK]
+  --
+  + activityId [FK]
+  + userId [FK]
+}
+
+entity "tb_message" as message {
+  + messageId [PK]
+  --
+  messageTitle
+  messageContent
+  currentTime
+  limitOfGrade
+  limitOfCollege
+}
+
+entity "tb_comments" as comments {
+  + commentId [PK]
+  --
+  content
+  + userId [FK]
+  + activityId [FK]
+  time
+  likes
+}
+
+entity "tb_focus" as focus {
+  + Id [PK]
+  --
+  + userId [FK]
+  + activityId [FK]
+}
+
+entity "tb_commentLike" as commentLike {
+  + commentId [PK]
+  --
+  + userId [FK]
+}
+
+entity "tb_violation" as violation {
+  + id [PK]
+  --
+  + userId [FK]
+  + activityId [FK]
+  currentTime
+}
+
+entity "tb_activity_update" as activity_update {
+  + id [PK]
+  --
+  + activityId [FK]
+  content
+  currentTime
+}
+
+' 关系定义
+user ||--o{ user_activity
+activity ||--o{ user_activity
+
+user ||--o{ admin_activity
+activity ||--o{ admin_activity
+
+user ||--o{ comments
+activity ||--o{ comments
+
+user ||--o{ focus
+activity ||--o{ focus
+
+comments ||--o{ commentLike
+user ||--o{ commentLike
+
+user ||--o{ violation
+activity ||--o{ violation
+
+activity ||--o{ activity_update
+
+' 消息关系
+user }o--|| message
+
+' 添加关系标签
+user_activity : "预约/被预约"
+admin_activity : "管理/被管理"
+focus : "关注/被关注"
+commentLike : "点赞/被点赞"
+violation : "违规记录"
+activity_update : "活动更新"
+
+user #ccffcc
+activity #ccccff
+admin_activity #ffcccc
+user_activity #dddddd
+message #ffffcc
+comments #ffccff
+focus #dddddd
+commentLike #dddddd
+violation #ffcccc
+activity_update #ffcccc
+
+note top of user
+  用户类型(userType)区分普通用户和管理员
+  包含违约计数和活动计数统计
+end note
+
+note top of activity
+  包含参与者限制、热度指标
+  有时间、学院、年级等限制条件
+end note
+
+@enduml
